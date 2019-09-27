@@ -39,6 +39,6 @@ object MaterializingStreams extends App {
 
   val f21 = Source(sentences)
     .map(_.split(" ").length)
-    .runWith(Sink.reduce(_ + _))
+    .runWith(Sink.reduce[Int](_ + _))
   val f22 = Source(sentences).toMat(wordCountSink)(Keep.right).run()
 }
