@@ -21,7 +21,7 @@ object OpenGraphs extends App {
     }
   )
 
-//  sourceGraph.to(Sink.foreach[Int](println)).run()
+  sourceGraph.to(Sink.foreach[Int](println)).run()
 
   val sink1 = Sink.foreach[Int](x => println(s"sink 1 $x"))
   val sink2 = Sink.foreach[Int](x => println(s"sink 2 $x"))
@@ -52,5 +52,5 @@ object OpenGraphs extends App {
     }
   )
 
-  source1.via(flowGraph).to(sink1).run()
+//  source1.via(flowGraph).to(sink1).run()
 }
