@@ -59,7 +59,7 @@ object GraphCycles extends App {
 
       source1 ~> tupler.in0; tupler.out ~> merge ~> fib ~> broadcast ~> output
       source2 ~> tupler.in1;
-                                           merge.preferred <~ broadcast.out(1)
+                                        merge.preferred <~ broadcast
 
 
       ClosedShape
