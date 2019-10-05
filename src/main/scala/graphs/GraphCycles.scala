@@ -49,8 +49,8 @@ object GraphCycles extends App {
   val fibGraph = RunnableGraph.fromGraph(
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
-      val source1 = Source(List[BigInt](1))
-      val source2 = Source(List[BigInt](1))
+      val source1 = Source.single[BigInt](1)
+      val source2 = Source.single[BigInt](1)
       val tupler = builder.add(ZipWith[BigInt, BigInt, (BigInt, BigInt)]((a, b) => (a, b)))
       val merge = builder.add(MergePreferred[(BigInt, BigInt)](1))
       val fib = builder.add(Flow[(BigInt, BigInt)].map{case(prev, last) => (last, last+prev)})
@@ -59,7 +59,7 @@ object GraphCycles extends App {
 
       source1 ~> tupler.in0; tupler.out ~> merge ~> fib ~> broadcast ~> output
       source2 ~> tupler.in1;
-                                           merge <~ broadcast.out(1)
+                                           merge.preferred <~ broadcast.out(1)
 
 
       ClosedShape
