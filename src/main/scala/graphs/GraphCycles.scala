@@ -1,9 +1,8 @@
 package graphs
 
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.MergePreferred
+import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Merge, MergePreferred, RunnableGraph, Sink, Source, ZipWith}
 import akka.stream.{ActorMaterializer, ClosedShape, OverflowStrategy}
-import akka.stream.scaladsl.{Flow, GraphDSL, Merge, RunnableGraph, Source}
 
 object GraphCycles extends App {
   implicit val system = ActorSystem("graph-system")
@@ -45,5 +44,27 @@ object GraphCycles extends App {
     ClosedShape
   }
 
-  RunnableGraph.fromGraph(bufferedAccelerator).run()
+//  RunnableGraph.fromGraph(bufferedAccelerator).run()
+
+  val fibGraph = RunnableGraph.fromGraph(
+    GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
+      val source1 = Source(List[BigInt](1))
+      val source2 = Source(List[BigInt](1))
+      val tupler = builder.add(ZipWith[BigInt, BigInt, (BigInt, BigInt)]((a, b) => (a, b)))
+      val merge = builder.add(MergePreferred[(BigInt, BigInt)](1))
+      val fib = builder.add(Flow[(BigInt, BigInt)].map{case(prev, last) => (last, last+prev)})
+      val broadcast = builder.add(Broadcast[(BigInt, BigInt)](2))
+      val output = builder.add(Sink.foreach[(BigInt, BigInt)]{case(prev,last) => println(s"$prev"); Thread.sleep(100)})
+
+      source1 ~> tupler.in0; tupler.out ~> merge ~> fib ~> broadcast ~> output
+      source2 ~> tupler.in1;
+                                           merge <~ broadcast.out(1)
+
+
+      ClosedShape
+    }
+  )
+
+  fibGraph.run()
 }
