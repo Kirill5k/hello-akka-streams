@@ -8,6 +8,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 
 import scala.concurrent.Future
+import scala.language.postfixOps
 
 object ServicesIntegration extends App {
 
