@@ -1,8 +1,9 @@
 package advanced
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Balance, GraphDSL, Merge, RunnableGraph, Sink, Source}
-import akka.stream.{ActorMaterializer, ClosedShape, Inlet, Outlet, Shape}
+import akka.stream.{ActorMaterializer, ClosedShape, Graph, Inlet, Outlet, Shape}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -19,16 +20,22 @@ object CustomGraphShapes extends App {
     )
   }
 
-  case class BalanceMxN[T](inlets: List[Inlet[T]], outlets: List[Outlet[T]]) extends Shape {
+  case class BalanceMxN[T](inlets: Seq[Inlet[T]], outlets: Seq[Outlet[T]]) extends Shape {
     override def deepCopy(): Shape = BalanceMxN(inlets.map(_.carbonCopy()), outlets.map(_.carbonCopy())
     )
   }
 
   object BalanceMxN {
-    def apply[T](inM: Int, outN: Int): BalanceMxN[T] = {
-      val inlets = List(0 until inM).map(i => Inlet[T](s"BalanceMxN.in$i"))
-      val outlets = List(0 until outN).map(i => Outlet[T](s"BalanceMxN.out$i"))
-      BalanceMxN(inlets, outlets)
+    def apply[T](inM: Int, outN: Int): Graph[BalanceMxN[T], NotUsed] = {
+      GraphDSL.create() { implicit  builder =>
+        import GraphDSL.Implicits._
+
+        val merge = builder.add(Merge[T](inM))
+        val balance = builder.add(Balance[T](outN))
+
+        merge ~> balance
+        BalanceMxN(merge.inlets, balance.outlets)
+      }
     }
   }
 
